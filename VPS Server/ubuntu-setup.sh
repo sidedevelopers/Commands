@@ -34,7 +34,7 @@ Ubuntu 22.04 64-bit
 
 # <- ############# PHP Configuration Start ############# ->
 
-=> apt install php libapache2-mod-php php-cli php-mbstring php-gd php-curl php-xml php-imagick php-json php-zip php-bcmath
+=> apt install php libapache2-mod-php php-cli php-mbstring php-gd php-curl php-xml php-imagick php-json php-zip php-bcmath php-intl
 
 php: The core PHP package.
 libapache2-mod-php: The Apache module for PHP.
@@ -160,9 +160,9 @@ journalctl -u apache2 to check status. system and apache2ctl can also be used fo
 desired. Calling /usr/bin/apache2 directly will not work with the default configuration.
 
 
-=> cd /var/www/domain.com
-=> mkdir logs
-# First create logs folder in domain folder
+=> cd /var/www/
+=> mkdir domainname_logs
+# First create logs folder near domain folder
 
 => cd /etc/apache2/sites-available
 # create file domain.com.conf
@@ -172,11 +172,11 @@ desired. Calling /usr/bin/apache2 directly will not work with the default config
 <VirtualHost *:80>
 ServerName domain.com
 ServerAlias www.domain.com
-ServerAdmin domain@gmail.com
+ServerAdmin aman.tca1805002@tmu.ac.in
 DocumentRoot /var/www/domain.com
 
-ErrorLog /var/www/domain.com/logs/error.log
-CustomLog /var/www/domain.com/logs/access.log combined
+ErrorLog /var/www/domainname_logs/error.log
+CustomLog /var/www/domainname_logs/access.log combined
 
 <Directory /var/www/domain.com>
 Options -Indexes +FollowSymLinks
@@ -199,4 +199,67 @@ CustomLog ${APACHE_LOG_DIR}/access.log combined
 
 => chown -R www-data:www-data /var/www/domain.com
 
-# <- ############# Apache Server Configuration Start ############# ->
+# <- ############# Rewrite Module Configuration For Wordpress Start ############# ->
+
+# Note:- However, keep in mind that this assumes the Apache server is properly configured to 
+# recognize .htaccess files. Make sure the mod_rewrite module is enabled.
+
+=> a2enmod rewrite
+# This used  for enable rewrite mod for .htaccess file
+# if REST API Error occured and sub pages not working
+
+=> systemctl reload apache2
+
+=> apache2ctl -M | grep rewrite
+Output -  rewrite_module (shared)
+# if no output then rewite module not enabled
+# check reqwrite module is enabled or not
+
+# <- ############# SSL Configuration Start ############# ->
+
+=> apt install certbot python3-certbot-apache
+
+=> certbot --apache
+# Registered a email
+# Press Enter when it says for choose domains (blank enter means choose all domains)
+
+=> Permanent Redirect to www
+
+RewriteEngine on
+RewriteCond %{SERVER_NAME} =www.theuktimes.co.uk [OR]
+RewriteCond %{SERVER_NAME} =theuktimes.co.uk
+RewriteRule ^ https://%{SERVER_NAME}%{REQUEST_URI} [END,NE,R=permanent]
+
+# Replace With
+
+RewriteEngine on
+RewriteCond %{HTTP_HOST} !^www\.
+RewriteRule ^ https://www.%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Now Set SSL Automatically renew
+
+=> cd /etc/letsencrypt/renewal-hooks/deploy
+
+=> vim reload-apache.sh 
+# (add below content)
+
+#!/bin/bash
+systemctl reload apache2
+
+=> chmod +x reload-apache.sh
+# make it executable
+
+=> cd /etc/letsencrypt/renewal
+
+=> vim your_domain.com.conf
+
+# Add the following line to the [renewalparams] section: (add in last)
+deploy_hook = /etc/letsencrypt/renewal-hooks/deploy/reload-apache.sh
+
+# Now, Certbot will reload Apache after each successful certificate renewal.
+
+=> certbot renew --dry-run
+# This command performs a dry run of the renewal process, which means it won't actually renew the 
+# certificate but will check if the renewal process works as expected.
+
+# <- ############# Mail Server Configuration Start ############# ->
