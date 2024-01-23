@@ -263,3 +263,45 @@ deploy_hook = /etc/letsencrypt/renewal-hooks/deploy/reload-apache.sh
 # certificate but will check if the renewal process works as expected.
 
 # <- ############# Mail Server Configuration Start ############# ->
+
+=> hostname -f
+Output:- srv464903.hstgr.cloud (but we used mail.domainname.com for FQDN)
+# This command will display the FQDN of your server.
+
+# Godaddy A Records (Same as multiple domains)
+Type - A
+Name - mail
+Data/Value - ip address
+TTL - 1/2 hour (600 seconds)
+
+=> vim /etc/hosts
+# add line (Same as multiple domains)
+# ipaddress mail.domainname.com
+
+=> apt install postfix
+# press "TAB" for choose "OK"
+# select "Internet Site"
+# Enter Fully Qualified Domain Name - mail.domainname.com 
+
+=> vim /etc/postfix/main.cf
+# Check if myhostname is empty then add my hostname by (hostname -f)
+
+=> systemctl restart postfix
+
+=> apt install mailutils
+# it helps for mail function run
+
+=> echo "This is a test email" | mail -s "Test Subject" aman.tca1805002@tmu.ac.in
+# After this mail successfully sent in spam folder
+
+# Godaddy TXT Records (Same as multiple domains)
+Type - TXT
+Name - @
+Data/Value - v=spf1 a mx include:mail.theuktimes.co.uk ~all
+TTL - 1/2 hour (600 seconds)
+
+# v=spf1: Denotes the SPF version.
+# a: Allows the use of the domain's A (IPv4 address) record in the SPF check.
+# mx: Allows the use of the domain's MX (mail exchange) records in the SPF check.
+# include:mail.theuktimes.co.uk: Includes the SPF records from the specified domain (mail.theuktimes.co.uk)
+# in the SPF check.
