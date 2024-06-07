@@ -233,8 +233,10 @@ RewriteRule ^ https://%{SERVER_NAME}%{REQUEST_URI} [END,NE,R=permanent]
 # Replace With
 
 RewriteEngine on
-RewriteCond %{HTTP_HOST} !^www\.
+RewriteCond %{HTTP_HOST} !^www\. [NC]
 RewriteRule ^ https://www.%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# [NC] means it not case sensitive
 
 # Now Set SSL Automatically renew
 
